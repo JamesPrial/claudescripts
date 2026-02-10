@@ -1,6 +1,6 @@
-export PATH="$HOME/.claudefiles/bin:$PATH"ß
+export PATH="$HOME/.claudefiles/bin:$PATH"
 
 alias danger="claude --allow-dangerously-skip-permissions"
 alias haiku="claude --model haiku --permission-mode bypassPermissions -p"
 alias sonnet="claude --model sonnet --permission-mode bypassPermissions -p"
-alias opus="claude --model opus --permission-mode bypassPermissions -p"ß
+alias opus="claude --model opus --permission-mode bypassPermissions -p"
