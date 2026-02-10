@@ -1,4 +1,4 @@
-export PATH="$HOME/.claudefiles/bin:$PATH"
+export PATH="$HOME/code/claudescripts/bin:$PATH"
 
 alias danger="claude --allow-dangerously-skip-permissions"
 alias haiku="claude --model haiku --permission-mode bypassPermissions -p"
