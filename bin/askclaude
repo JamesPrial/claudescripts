@@ -2,4 +2,5 @@
 # askclaude - quick bash Q&A using Claude Code
 exec claudebase -m haiku \
   -t Bash,Read,Write,websearch \
+  -n 5 \
   "$@"
