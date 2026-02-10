@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# claudebase - base wrapper for scripted one-shot Claude Code invocations
+# All wrapper scripts (askclaude, ghcli, push, support) call this.
+
+usage() {
+    cat <<'EOF'
+Usage: claudebase [flags] <prompt...>
+
+Flags:
+  -m MODEL   Model (haiku, sonnet, opus, or claude-* ID)  [default: sonnet]
+  -p MODE    Permission mode                               [default: bypassPermissions]
+  -t TOOLS   Comma-separated allowed tools (e.g. Bash,Read,Write)
+  -s TEXT    Append to system prompt (preserves built-in prompt)
+  -S TEXT    Replace system prompt entirely (mutually exclusive with -s)
+  -a AGENT   Named agent for the session
+  -A JSON    Custom agents defined inline as JSON
+  -n N       Max turns
+  -o FMT    Output format
+  -h         Print this help and exit
+
+Examples:
+  claudebase -m haiku "what is 2+2"
+  claudebase -m opus -t Bash,Read -s "You are a git expert" "commit changes"
+EOF
+    exit 0
+}
+
+validate_model() {
+    case "$1" in
+        haiku|sonnet|opus) return 0 ;;
+        *claude-*) return 0 ;;
+        *) echo "Error: invalid model '$1' (expected haiku, sonnet, opus, or a claude-* ID)" >&2; exit 1 ;;
+    esac
+}
+
+validate_permission_mode() {
+    case "$1" in
+        acceptEdits|bypassPermissions|default|delegate|dontAsk|plan) return 0 ;;
+        *) echo "Error: invalid permission mode '$1' (expected acceptEdits, bypassPermissions, default, delegate, dontAsk, or plan)" >&2; exit 1 ;;
+    esac
+}
+
+# Defaults
+MODEL=sonnet
+PERM_MODE=bypassPermissions
+TOOLS=""
+APPEND_SYSTEM=""
+REPLACE_SYSTEM=""
+AGENT=""
+AGENTS_JSON=""
+MAX_TURNS=""
+OUTPUT_FMT=""
+
+while getopts ":m:p:t:s:S:a:A:n:o:h" opt; do
+    case "$opt" in
+        m) MODEL="$OPTARG" ;;
+        p) PERM_MODE="$OPTARG" ;;
+        t) TOOLS="$OPTARG" ;;
+        s) APPEND_SYSTEM="$OPTARG" ;;
+        S) REPLACE_SYSTEM="$OPTARG" ;;
+        a) AGENT="$OPTARG" ;;
+        A) AGENTS_JSON="$OPTARG" ;;
+        n) MAX_TURNS="$OPTARG" ;;
+        o) OUTPUT_FMT="$OPTARG" ;;
+        h) usage ;;
+        :) echo "Error: -$OPTARG requires an argument" >&2; exit 1 ;;
+        *) echo "Error: unknown flag -$OPTARG" >&2; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+# Validate
+validate_model "$MODEL"
+validate_permission_mode "$PERM_MODE"
+
+if [[ -n "$APPEND_SYSTEM" && -n "$REPLACE_SYSTEM" ]]; then
+    echo "Error: -s and -S are mutually exclusive" >&2
+    exit 1
+fi
+
+if [[ $# -eq 0 ]]; then
+    echo "Error: no prompt provided" >&2
+    exit 1
+fi
+
+# Build command
+CMD=(claude --model "$MODEL" --permission-mode "$PERM_MODE" -p)
+
+[[ -n "$TOOLS" ]]          && CMD+=(--allowedTools "$TOOLS")
+[[ -n "$APPEND_SYSTEM" ]]  && CMD+=(--append-system-prompt "$APPEND_SYSTEM")
+[[ -n "$REPLACE_SYSTEM" ]] && CMD+=(--system-prompt "$REPLACE_SYSTEM")
+[[ -n "$AGENT" ]]          && CMD+=(--agent "$AGENT")
+[[ -n "$AGENTS_JSON" ]]    && CMD+=(--agents "$AGENTS_JSON")
+[[ -n "$MAX_TURNS" ]]      && CMD+=(--max-turns "$MAX_TURNS")
+[[ -n "$OUTPUT_FMT" ]]     && CMD+=(--output-format "$OUTPUT_FMT")
+
+exec "${CMD[@]}" "$@"
