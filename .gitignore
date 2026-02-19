@@ -1,0 +1,10 @@
+# Debug logs
+*-debug.log
+
+# macOS
+.DS_Store
+
+# Editor
+*.swp
+*.swo
+*~
