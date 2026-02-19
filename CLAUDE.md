@@ -26,9 +26,31 @@ exec claudebase -m <model> -t <tools> -s "<system prompt>" "$@"
 
 Make it executable. The script inherits `claudebase` defaults (bypassPermissions, sonnet) for any flags not specified.
 
+Scripts that load agents from JSON files should resolve them relative to the repo root. See `ghcli` for the pattern using `SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"`.
+
+## Adding a New Agent
+
+Create `agents/<name>.json` with this structure:
+
+```json
+{
+  "<name>": {
+    "description": "One-line description of the agent's role.",
+    "prompt": "System prompt with instructions and constraints.",
+    "tools": ["Bash", "Read"],
+    "model": "haiku",
+    "color": "green"
+  }
+}
+```
+
+Required fields: `description`, `prompt`, `tools`, `model`. Optional: `color`.
+
 ## Conventions
 
 - All wrapper scripts use `exec` to replace the shell process (no dangling bash parent).
 - Wrapper scripts use `"$@"` to pass all positional args as the prompt, except scripts with a sensible default prompt which use `"${1:-default prompt}"`.
 - Scripts assume `claudebase` is on PATH (via `.aliases` or user's PATH config).
 - Agent definitions are individual JSON files in `agents/`, one per agent. Merge with `jq -s add` to pass multiple agents via `-A`.
+- Model shorthand: `haiku`, `sonnet`, `opus` are accepted by claudebase and expanded to the appropriate `claude-*` model IDs.
+- All invocations are non-interactive (print mode via `-p`). These scripts are for one-shot CLI usage, not interactive sessions.
