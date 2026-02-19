@@ -2,5 +2,6 @@
 # push - commit and push changes using Claude Code
 exec claudebase -m haiku \
   -t Bash,Read \
-  -n 1 
+  -n 10 \
+  -p dontAsk \
   "${1:-commit and push all changes in the repository}"
